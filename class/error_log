@@ -1,0 +1,7 @@
+[22-Jun-2024 00:18:49 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'undefined' in 'where clause' in /home/ytnbanmd/sistemaitesem.com/class/buscar_select_materia.php:10
+Stack trace:
+#0 /home/ytnbanmd/sistemaitesem.com/class/buscar_select_materia.php(10): mysqli_query(Object(mysqli), 'SELECT cod_mate...')
+#1 {main}
+  thrown in /home/ytnbanmd/sistemaitesem.com/class/buscar_select_materia.php on line 10
+[13-Jul-2024 01:49:47 UTC] PHP Warning:  Undefined variable $sigla in /home/ytnbanmd/sistemaitesem.com/class/buscar_reporte_inscritos.php on line 190
+[13-Jul-2024 01:49:47 UTC] PHP Warning:  Undefined variable $valores in /home/ytnbanmd/sistemaitesem.com/class/buscar_reporte_inscritos.php on line 191
