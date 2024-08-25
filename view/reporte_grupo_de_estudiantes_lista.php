@@ -78,6 +78,7 @@ if (verificar_usuario()) {
 										</center>
 										<?php
 										$cod_oferta = 0;
+										$array_mes = array('', 'ene.','feb.','mar.','abr.','may.','jun.','jul.','ago.','sep.','oct.','nov.','dic.');
 										if (isset($_GET['gru']) && isset($_GET['per'])) {
 											$cod_grupo = $_GET['gru'];
 											$cod_periodo = $_GET['per'];
@@ -119,7 +120,22 @@ if (verificar_usuario()) {
 											</div>
 											<div class="no-more-tables">
 												<table id="datatable_buscador" class="table table-striped table-sm table-bordered">
-													<thead>
+													
+												<thead>
+												<tr class="table-secondary text-center" style="border: 1px solid;">
+													<th colspan="4"></th>
+													<?php
+													$mes = date_format(date_create($fecha_ini), 'n');
+															for ($m1 = 1; $m1 <= $mensualidad; $m1++) {
+																
+															?>			
+																<th><?php echo $array_mes[$mes]; ?></th>
+															<?php
+															if ($mes == 12) $mes = 1; else	$mes++;
+															}
+															?>
+													<th colspan="2"></th>		
+												</tr>
 														<tr class="table-secondary text-center" style="border: 1px solid;">
 															<th>#</th>
 															<th>ESTUDIANTE</th>
@@ -127,12 +143,13 @@ if (verificar_usuario()) {
 															<th>MATR.</th> <!-- Mover "MATR." fuera del bucle -->
 															<?php
 															for ($m = 1; $m <= $mensualidad; $m++) {
-															?>
+															?>																
 																<th>C<?php echo $m; ?></th>
 															<?php
 															}
 															?>
 															<th>TOTAL</th>
+															<th>OBS</th>
 														</tr>
 													</thead>
 													<tbody>
@@ -178,26 +195,24 @@ if (verificar_usuario()) {
     CASE 
         WHEN 
             (
-                SELECT COUNT(*) 
+                SELECT SUM(precio_haber_cuenta) 
                 FROM tbl_cuenta_estudiante tc
                 WHERE 
                     tc.cod_estudiante_cuenta = te.cod_estudiante
                     AND tc.estado_cuenta = 1
                     AND tc.cod_articulo_cuenta IN (2,85,115)
                     AND tc.fecha_cuenta <= LAST_DAY(CURRENT_DATE())
-            ) >= TIMESTAMPDIFF(MONTH, tpdo.fecha_ini_peri, LAST_DAY(CURRENT_DATE()))
-            OR 
-            tcar.mensualidad_car = 
-            (
-                SELECT COUNT(*) 
+            ) >= (
+                SELECT SUM(precio_debe_cuenta) 
                 FROM tbl_cuenta_estudiante tc
                 WHERE 
                     tc.cod_estudiante_cuenta = te.cod_estudiante
                     AND tc.estado_cuenta = 1
-                    AND tc.cod_articulo_cuenta IN (2,85,115)
+                    AND tc.cod_articulo_cuenta IN (3,105,251)
+                    AND tc.fecha_cuenta <= LAST_DAY(CURRENT_DATE())
             )
-        THEN 'PAGADO'
-        ELSE 'DEUDA'
+        THEN 'COMPLETADO'
+        ELSE ''
     END AS estado_pago_hasta_fecha_actual,
 -- Calcular el total pagado multiplicando el precio del plan por el número de cuotas pagadas
     (
@@ -236,13 +251,12 @@ INNER JOIN
     tbl_aula ta ON tom.cod_aula_of = ta.cod_aula
 WHERE 
     tom.cod_grupo_of = $cod_grupo
-    AND tom.cod_periodo_of = $cod_periodo
+    AND tom.cod_periodo_of = $cod_periodo 
     AND th.estado_his = 1 
 GROUP BY 
     te.cod_estudiante
 ORDER BY 
-    tp.apellido_per, tp.nombre_per, tg.cod_grupo, tpdo.cod_periodo, tt.cod_turno;
-");
+    tp.apellido_per, tp.nombre_per, tg.cod_grupo, tpdo.cod_periodo,tt.cod_turno;");
 
 														if (mysqli_num_rows($sql_historico) > 0) {
 															while ($row_h = mysqli_fetch_array($sql_historico)) {
@@ -289,7 +303,7 @@ ORDER BY
 																}
 
 																// Establecer el color según la cantidad de pendientes
-																/* $clase_estudiante = ($row_h['estado_pago_hasta_fecha_actual'] == 'DEUDA') ? 'bg-danger text-white' : 'bg-success text-white'; */
+																/*  $clase_estudiante = ($row_h['estado_pago_hasta_fecha_actual'] == '') ? 'bg-danger text-white' : 'bg-success text-white';  */
 
 														?>
 																<tr style="border: 1px solid;">
@@ -328,6 +342,9 @@ ORDER BY
 																	}
 																	$suma_cuota = ($row_h['total_pagado_hasta_fecha_actual'] > 0) ? $row_h['total_pagado_hasta_fecha_actual'] : 0;
 																	echo "<td align='center' style='font-weight: bold;'><small><b>" . $suma_cuota . "</b><small></td>";
+
+																	$obs_cuota = $row_h['estado_pago_hasta_fecha_actual'];
+																	echo "<td align='center' style='font-weight: bold;'><small><b>" . $obs_cuota . "</b><small></td>"
 																	?>
 																</tr>
 														<?php
