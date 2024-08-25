@@ -140,108 +140,109 @@ if (verificar_usuario()) {
 														$item = 1;
 														$cod_estudiante = 0;
 
-							            	$sql_historico = mysqli_query($con, "SELECT 
-																				te.cod_estudiante, 
-																				tp.nombre_per, 
-																				tp.apellido_per, 
-																				tp.carnet_per, 
-																				tp.celular_per,
-																				tplan.sigla_plan, 
-																				tplan.precio_plan,  -- Utilizamos el precio_plan directamente
-																				tcar.cod_carrera, 
-																				tcar.sigla_car, 
-																				tcar.mensualidad_car, 
-																				tnivel.anho_niv,
-																				tg.cod_grupo, 
-																				tpdo.cod_periodo, 
-																				tt.cod_turno, 
-																				ta.cod_aula,
-																				-- Subconsulta para obtener la última fecha de pago realizada donde el cod_articulo_cuenta = 2 (mensualidades)
-																				(
-																					SELECT MAX(tc.fecha_cuenta)
-																					FROM tbl_cuenta_estudiante tc
-																					WHERE 
-																						tc.cod_estudiante_cuenta = te.cod_estudiante
-																						AND tc.estado_cuenta = 1
-																						AND tc.cod_articulo_cuenta = 2
-																				) AS ultima_fecha_pago,
-																				-- Subconsulta para contar el número de cuotas pagadas donde el cod_articulo_cuenta = 2 (mensualidades)
-																				(
-																					SELECT COUNT(*) 
-																					FROM tbl_cuenta_estudiante tc
-																					WHERE 
-																						tc.cod_estudiante_cuenta = te.cod_estudiante
-																						AND tc.estado_cuenta = 1
-																						AND tc.cod_articulo_cuenta = 2
-																				) AS numero_cuotas_pagadas,
-																				-- Verificamos si el número de cuotas pagadas es igual a la mensualidad_car
-																				CASE 
-																					WHEN 
-																						(
-																							SELECT COUNT(*) 
-																							FROM tbl_cuenta_estudiante tc
-																							WHERE 
-																								tc.cod_estudiante_cuenta = te.cod_estudiante
-																								AND tc.estado_cuenta = 1
-																								AND tc.cod_articulo_cuenta = 2
-																								AND tc.fecha_cuenta <= LAST_DAY(CURRENT_DATE())
-																						) >= TIMESTAMPDIFF(MONTH, tpdo.fecha_ini_peri, LAST_DAY(CURRENT_DATE()))
-																						OR 
-																						tcar.mensualidad_car = 
-																						(
-																							SELECT COUNT(*) 
-																							FROM tbl_cuenta_estudiante tc
-																							WHERE 
-																								tc.cod_estudiante_cuenta = te.cod_estudiante
-																								AND tc.estado_cuenta = 1
-																								AND tc.cod_articulo_cuenta = 2
-																						)
-																					THEN 'PAGADO'
-																					ELSE 'DEUDA'
-																				END AS estado_pago_hasta_fecha_actual,
-																			-- Calcular el total pagado multiplicando el precio del plan por el número de cuotas pagadas
-																				(
-																					(
-																						SELECT SUM(precio_haber_cuenta) 
-																						FROM tbl_cuenta_estudiante tc
-																						WHERE 
-																							tc.cod_estudiante_cuenta = te.cod_estudiante
-																							AND tc.estado_cuenta = 1
-																							AND tc.cod_articulo_cuenta = 2
-																					)
-																				) AS total_pagado_hasta_fecha_actual
-																			FROM 
-																				tbl_estudiante te
-																			INNER JOIN 
-																				tbl_persona tp ON te.cod_persona_est = tp.cod_persona
-																			INNER JOIN 
-																				tbl_plan tplan ON te.cod_plan_est = tplan.cod_plan -- Asegurarse de incluir el precio del plan
-																			INNER JOIN 
-																				tbl_carrera tcar ON te.cod_carrera_est = tcar.cod_carrera
-																			INNER JOIN 
-																				tbl_nivel tnivel ON tcar.cod_nivel_car = tnivel.cod_nivel
-																			LEFT JOIN 
-																				tbl_cuenta_estudiante tc ON te.cod_estudiante = tc.cod_estudiante_cuenta AND tc.cod_tipocuenta_cuenta = 2
-																			INNER JOIN 
-																				tbl_historico th ON te.cod_estudiante = th.cod_estudiante_his
-																			INNER JOIN 
-																				tbl_oferta_materia tom ON th.cod_oferta_materia_his = tom.cod_oferta_materia
-																			INNER JOIN 
-																				tbl_grupo tg ON tom.cod_grupo_of = tg.cod_grupo
-																			INNER JOIN 
-																				tbl_periodo tpdo ON tom.cod_periodo_of = tpdo.cod_periodo
-																			INNER JOIN 
-																				tbl_turno tt ON tom.cod_turno_of = tt.cod_turno
-																			INNER JOIN 
-																				tbl_aula ta ON tom.cod_aula_of = ta.cod_aula
-																			WHERE 
-																				tom.cod_grupo_of = $cod_grupo
-																				AND tom.cod_periodo_of = $cod_periodo 
-																				AND th.estado_his = 1 
-																			GROUP BY 
-																				te.cod_estudiante
-																			ORDER BY 
-																				tp.apellido_per, tp.nombre_per, tg.cod_grupo, tpdo.cod_periodo, tt.cod_turno;");
+														$sql_historico = mysqli_query($con, "SELECT
+    te.cod_estudiante, 
+    tp.nombre_per, 
+    tp.apellido_per, 
+    tp.carnet_per, 
+    tp.celular_per,
+    tplan.sigla_plan, 
+    tplan.precio_plan,  -- Utilizamos el precio_plan directamente
+    tcar.cod_carrera, 
+    tcar.sigla_car, 
+    tcar.mensualidad_car, 
+    tnivel.anho_niv,
+    tg.cod_grupo, 
+    tpdo.cod_periodo, 
+    tt.cod_turno, 
+    ta.cod_aula,
+    -- Subconsulta para obtener la última fecha de pago realizada donde el cod_articulo_cuenta = 2 (mensualidades)
+    (
+        SELECT MAX(tc.fecha_cuenta)
+        FROM tbl_cuenta_estudiante tc
+        WHERE 
+            tc.cod_estudiante_cuenta = te.cod_estudiante
+            AND tc.estado_cuenta = 1
+            AND tc.cod_articulo_cuenta IN (2,85,115)
+    ) AS ultima_fecha_pago,
+    -- Subconsulta para contar el número de cuotas pagadas donde el cod_articulo_cuenta = 2 (mensualidades)
+    (
+        SELECT COUNT(*) 
+        FROM tbl_cuenta_estudiante tc
+        WHERE 
+            tc.cod_estudiante_cuenta = te.cod_estudiante
+            AND tc.estado_cuenta = 1
+            AND tc.cod_articulo_cuenta IN (2,85,115)
+    ) AS numero_cuotas_pagadas,
+    -- Verificamos si el número de cuotas pagadas es igual a la mensualidad_car
+    CASE 
+        WHEN 
+            (
+                SELECT COUNT(*) 
+                FROM tbl_cuenta_estudiante tc
+                WHERE 
+                    tc.cod_estudiante_cuenta = te.cod_estudiante
+                    AND tc.estado_cuenta = 1
+                    AND tc.cod_articulo_cuenta IN (2,85,115)
+                    AND tc.fecha_cuenta <= LAST_DAY(CURRENT_DATE())
+            ) >= TIMESTAMPDIFF(MONTH, tpdo.fecha_ini_peri, LAST_DAY(CURRENT_DATE()))
+            OR 
+            tcar.mensualidad_car = 
+            (
+                SELECT COUNT(*) 
+                FROM tbl_cuenta_estudiante tc
+                WHERE 
+                    tc.cod_estudiante_cuenta = te.cod_estudiante
+                    AND tc.estado_cuenta = 1
+                    AND tc.cod_articulo_cuenta IN (2,85,115)
+            )
+        THEN 'PAGADO'
+        ELSE 'DEUDA'
+    END AS estado_pago_hasta_fecha_actual,
+-- Calcular el total pagado multiplicando el precio del plan por el número de cuotas pagadas
+    (
+        (
+            SELECT SUM(precio_haber_cuenta) 
+            FROM tbl_cuenta_estudiante tc
+            WHERE 
+                tc.cod_estudiante_cuenta = te.cod_estudiante
+                AND tc.estado_cuenta = 1
+                AND tc.cod_articulo_cuenta IN (2,85,115)
+        )
+    ) AS total_pagado_hasta_fecha_actual
+FROM 
+    tbl_estudiante te
+INNER JOIN 
+    tbl_persona tp ON te.cod_persona_est = tp.cod_persona
+INNER JOIN 
+    tbl_plan tplan ON te.cod_plan_est = tplan.cod_plan -- Asegurarse de incluir el precio del plan
+INNER JOIN 
+    tbl_carrera tcar ON te.cod_carrera_est = tcar.cod_carrera
+INNER JOIN 
+    tbl_nivel tnivel ON tcar.cod_nivel_car = tnivel.cod_nivel
+LEFT JOIN 
+    tbl_cuenta_estudiante tc ON te.cod_estudiante = tc.cod_estudiante_cuenta AND tc.cod_tipocuenta_cuenta = 2
+INNER JOIN 
+    tbl_historico th ON te.cod_estudiante = th.cod_estudiante_his
+INNER JOIN 
+    tbl_oferta_materia tom ON th.cod_oferta_materia_his = tom.cod_oferta_materia
+INNER JOIN 
+    tbl_grupo tg ON tom.cod_grupo_of = tg.cod_grupo
+INNER JOIN 
+    tbl_periodo tpdo ON tom.cod_periodo_of = tpdo.cod_periodo
+INNER JOIN 
+    tbl_turno tt ON tom.cod_turno_of = tt.cod_turno
+INNER JOIN 
+    tbl_aula ta ON tom.cod_aula_of = ta.cod_aula
+WHERE 
+    tom.cod_grupo_of = $cod_grupo
+    AND tom.cod_periodo_of = $cod_periodo
+    AND th.estado_his = 1 
+GROUP BY 
+    te.cod_estudiante
+ORDER BY 
+    tp.apellido_per, tp.nombre_per, tg.cod_grupo, tpdo.cod_periodo, tt.cod_turno;
+");
 
 														if (mysqli_num_rows($sql_historico) > 0) {
 															while ($row_h = mysqli_fetch_array($sql_historico)) {
@@ -251,7 +252,7 @@ if (verificar_usuario()) {
 																// Contar pagos pendientes
 																$pendientes = 0;
 																$pagos = [];
-																$totales =[];
+																$totales = [];
 																$fecha_hoy = date('Y-m-d');
 																$estado_cuota = '';
 
@@ -274,7 +275,7 @@ if (verificar_usuario()) {
 																				$pendientes++;
 																			}
 																			$pagos[] = $estado_cuota;
-																			$totales[]= $row_h['total_pagado_hasta_fecha_actual'];
+																			$totales[] = $row_h['total_pagado_hasta_fecha_actual'];
 																		}
 																	} else {
 																		if ($estado_cuota > 0) {
@@ -315,17 +316,15 @@ if (verificar_usuario()) {
 																		/* LA MATRICULA */
 																		while ($row_c = mysqli_fetch_array($sql_cuenta)) {
 																			$estado_cuota = ($row_c['precio_haber_cuenta'] > 0) ? 'pago' : 'pendiente';
-																			echo "<td align='center' class='$estado_cuota'> ✔ </td>";
-																																			
+																			echo "<td align='center' class='$estado_cuota' style='color:green'> <small>Pagado</small> </td>";
 																		}
 																	} else {
-																		echo "<td align='center' class='pendiente'>❌</td>";
+																		echo "<td align='center' class='pendiente' style='color:red'><small>Pendiente</small></td>";
 																	}
 
 																	// Mostrar los pagos
 																	foreach ($pagos as $pago) {
 																		echo "<td align='center' class='$pago'><small>" . ucfirst($pago) . "</small></td>";
-																		
 																	}
 																	$suma_cuota = ($row_h['total_pagado_hasta_fecha_actual'] > 0) ? $row_h['total_pagado_hasta_fecha_actual'] : 0;
 																	echo "<td align='center' style='font-weight: bold;'><small><b>" . $suma_cuota . "</b><small></td>";
