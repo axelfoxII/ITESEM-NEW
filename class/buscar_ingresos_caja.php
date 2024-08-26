@@ -37,7 +37,7 @@
 
 			$sql_usuario_venta = mysqli_query($con, "SELECT cod_usuario, nombre_per, apellido_per 
 				FROM tbl_venta, tbl_usuario, tbl_persona 
-				WHERE cod_usuario_venta = cod_usuario AND cod_persona_us = cod_persona AND fecha_venta >= '$fecha_inicio' AND fecha_venta <= '$fecha_fin' 
+				WHERE cod_usuario_venta = cod_usuario AND cod_persona_us = cod_persona AND fecha_venta >= '$fecha_inicio' AND fecha_venta <= '$fecha_fin' AND cod_sucursal_venta = $sucursal 
 				AND estado_venta = 1 GROUP BY cod_usuario");
 			if (mysqli_num_rows($sql_usuario_venta) > 0) {
 				?>
@@ -87,10 +87,24 @@
 							</tr>
 							<?php
 						}
+						$sql_tipo_total = mysqli_query($con, "SELECT cod_tipopago, nombre_tipopago, SUM(monto_bs_detven) AS monto_bs
+							FROM tbl_venta, tbl_tipo_pago, tbl_detalle_venta  
+							WHERE cod_venta = cod_venta_detven  
+							AND cod_tipopago_venta = cod_tipopago AND fecha_venta >= '$fecha_inicio' AND fecha_venta <= '$fecha_fin' 
+							AND estado_venta = 1 AND cod_usuario_venta = $cod_usuario AND cod_sucursal_venta = $sucursal GROUP BY cod_tipopago ORDER BY cod_venta");
+						while ($row_tt = mysqli_fetch_array($sql_tipo_total)) {
+							?>
+							<tr class="bg-grey-100">
+								<td colspan="5"></td>
+								<td colspan="2" align="right"><b>TOTAL <?php echo $row_tt['nombre_tipopago']; ?>:</b></td>
+								<td align="right"><b><?php echo number_format((abs ($row_tt['monto_bs'])), 2); ?></b></td>
+							</tr>
+							<?php
+						}
 						?>
-						<tr class="bg-grey-100">
+						<tr class="bg-grey-300">
 							<td colspan="7"></td>
-							<td align="right" class="text-danger"><?php echo number_format((abs ($monto_usuario)), 2); ?></td>
+							<td align="right" class="text-danger text-bold"><?php echo number_format((abs ($monto_usuario)), 2); ?></td>
 						</tr>
 						<?php
 					}
