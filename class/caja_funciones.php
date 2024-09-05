@@ -98,7 +98,7 @@
     		$sub = 0; $total_sub = 0;
     		$cod_nro_movimiento = 0;
     		$cod_tipoarticulo_art = 0;
-    		$sql_detalle = mysqli_query($con, "SELECT cod_nro_movimiento, descripcion_nmov, cantidad_nmov, precio_nmov, dscto_nmov, subtotal_nmov, cod_articulo_nmov, tipo_nmov 
+    		$sql_detalle = mysqli_query($con, "SELECT cod_nro_movimiento, descripcion_nmov, cantidad_nmov, precio_nmov, factura_nmov, dscto_nmov, subtotal_nmov, cod_articulo_nmov, tipo_nmov 
     			FROM tbl_detalle_movimiento WHERE cod_usuario_nmov = $cod_usuario");
     		while ($row_d = mysqli_fetch_array($sql_detalle)) {
     			$cod_articulo = $row_d['cod_articulo_nmov'];
@@ -115,7 +115,8 @@
 
 	    			$cod_nro_movimiento = $row_d['cod_nro_movimiento'];
 	    			$cantidad = $row_d['cantidad_nmov'];
-	    			$precio = $row_d['precio_nmov'];
+						$precio = $row_d['precio_nmov'];
+	    			$factura = $row_d['factura_nmov'];
 	    			$dscto = $row_d['dscto_nmov'];
 	    			$sub = $row_d['subtotal_nmov'];
 
@@ -141,6 +142,7 @@
 		    			$data['acuenta_activo'] = 1;
 	    			}else{
 		    			$data['tabla'] = $data['tabla']."<td>".$precio."</td>
+								<td>".$factura."</td>
 		    				<td>".$cantidad."</td>
 		    				<td>".$dscto."</td>
 		    				<td>".$sub."</td>
@@ -291,6 +293,20 @@
     		$cod_articulo = $_REQUEST['cod_art'];
     		$cod_usuario = $_REQUEST['cod_usu'];
     		$cod_estudiante = $_REQUEST['cod_est'];
+
+				// factura_nmov = 0
+				$sql_detfac = mysqli_query($con, "SELECT cod_nro_movimiento, cantidad_nmov, precio_nmov, dscto_nmov, subtotal_nmov FROM tbl_detalle_movimiento 
+					WHERE cod_usuario_nmov = $cod_usuario AND tipo_nmov = 1 AND descripcion_nmov NOT LIKE '%(CARGADO)%'");
+				if(mysqli_num_rows($sql_detfac) > 0){
+					$cod_nro_movimiento = 0; $subtotal = 0;
+					while ($row_d = mysqli_fetch_array($sql_detfac)) {
+						$cod_nro_movimiento = $row_d['cod_nro_movimiento'];
+						$subtotal = $row_d['precio_nmov'] * $row_d['cantidad_nmov'];
+						//UPDATE factura_nmov
+						$update_detalle = mysqli_query($con, "UPDATE tbl_detalle_movimiento SET factura_nmov = 0, subtotal_nmov = $subtotal 
+							WHERE cod_nro_movimiento = $cod_nro_movimiento");
+					}
+				}
 
     		// BUSCAR EL ARTICULO
     		$nombre_art = ""; $precio_art = 0;
@@ -529,6 +545,39 @@
 	    	}
     		break;
 
+				case 'factura':
+					$factura = $_REQUEST['fac'];
+    			$cod_usuario = $_REQUEST['cod_usu'];
+					$sql_detalle = mysqli_query($con, "SELECT cod_nro_movimiento, cantidad_nmov, precio_nmov, dscto_nmov, subtotal_nmov FROM tbl_detalle_movimiento 
+						WHERE cod_usuario_nmov = $cod_usuario AND tipo_nmov = 1 AND descripcion_nmov NOT LIKE '%(CARGADO)%'");
+
+					if($factura == 1){
+						if(mysqli_num_rows($sql_detalle) > 0){
+							$porcentaje16 = 0;
+							$cod_nro_movimiento = 0; $subtotal = 0;
+							while ($row_d = mysqli_fetch_array($sql_detalle)) {
+								$cod_nro_movimiento = $row_d['cod_nro_movimiento'];
+								$porcentaje16 = $row_d['precio_nmov'] * 0.16;
+								$subtotal = ($row_d['precio_nmov'] + $porcentaje16) * $row_d['cantidad_nmov'];
+								//UPDATE factura_nmov
+								$update_detalle = mysqli_query($con, "UPDATE tbl_detalle_movimiento SET factura_nmov = $porcentaje16, subtotal_nmov = $subtotal 
+									WHERE cod_nro_movimiento = $cod_nro_movimiento");
+							}
+						}
+					}else{
+						if(mysqli_num_rows($sql_detalle) > 0){
+							$porcentaje16 = 0;
+							$cod_nro_movimiento = 0; $subtotal = 0;
+							while ($row_d = mysqli_fetch_array($sql_detalle)) {
+								$cod_nro_movimiento = $row_d['cod_nro_movimiento'];
+								$subtotal = $row_d['precio_nmov'] * $row_d['cantidad_nmov'];
+								//UPDATE factura_nmov
+								$update_detalle = mysqli_query($con, "UPDATE tbl_detalle_movimiento SET factura_nmov = $porcentaje16, subtotal_nmov = $subtotal 
+									WHERE cod_nro_movimiento = $cod_nro_movimiento");
+							}
+						}
+					}
+					break;
 		}
 	}
 ?>
