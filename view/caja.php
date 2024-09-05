@@ -267,24 +267,13 @@ if (verificar_usuario()){
 								<table class="table">
 									<thead>
 										<tr class="table-primary">
-											<th>
-												<font color="white">NOMBRE</font>
-											</th>
-											<th>
-												<font color="white">P. UNIDAD</font>
-											</th>
-											<th>
-												<font color="white">CANT.</font>
-											</th>
-											<th>
-												<font color="white">DSCTO.</font>
-											</th>
-											<th>
-												<font color="white">SUB TOTAL</font>
-											</th>
-											<th>
-												<font color="white">OPCIONES</font>
-											</th>
+											<th><font color="white">NOMBRE</font></th>
+											<th><font color="white">P. UNIDAD</font></th>
+											<th><font color="white">FACT (16%)</font></th>
+											<th><font color="white">CANT.</font></th>
+											<th><font color="white">DSCTO.</font></th>
+											<th><font color="white">SUB TOTAL</font></th>
+											<th><font color="white">OPCIONES</font></th>
 										</tr>
 									</thead>
 									<tbody id="tabla_detalle">
@@ -296,6 +285,12 @@ if (verificar_usuario()){
 										<div class="col-sm-2">
 											<label class="col-form-label"><b>TOTAL Bs:</b></label>
 											<input type="text" class="form-control textbox" id="totales" name="totales" value="" readonly />
+										</div>
+										<div class="col-sm-2">
+											<br>
+											<label class="switch switch-warn">
+												<input type="checkbox" id="factura-16"><span></span>
+											</label>Factura +16%
 										</div>
 
 										<div class="col-sm-1"></div>
@@ -611,6 +606,7 @@ if (verificar_usuario()){
 							dataType: "html",
 							error: function(){ alert("Error en la peticion AJAX - Articulo"); },
 							success: function(data){
+								$('#factura-16').prop('checked', false);
 								$.ajax({
 									type: "POST",
 									url: "../class/caja_funciones.php",
@@ -917,6 +913,40 @@ if (verificar_usuario()){
 					}else{
 						alertify.notify('<i class="fa fa-warning"></i> FORMA DE PAGO NO SELECCIONADA','error',7).dismissOthers();
 					}
+				});
+
+				$('#factura-16').on('change', function() {
+					if ($(this).is(':checked')) {
+						var factura = 1;
+					} else {
+						var factura = 0;
+					}
+					var cod_usuario = "<?php echo $cod_usuario; ?>";
+					$.ajax({
+						type: "POST",
+						url: "../class/caja_funciones.php",
+						data: "funcion=factura&fac="+factura+"&cod_usu="+cod_usuario,
+						dataType: "html",
+						error: function(){ alert("Error en la peticion AJAX - Factura"); },
+						success: function(data){
+							$.ajax({
+								type: "POST",
+								url: "../class/caja_funciones.php",
+								data: "funcion=generar_tabla&cod_usu="+cod_usuario,
+								dataType: "json",
+								beforeSend: function(){
+									// $("#tabla_detalle").html("<div class='text-center'><img width='10%' src='img/load.gif'/></div>");
+								},
+								error: function(){ alert("Error en la peticion AJAX - Generar Tabla"); },
+								success: function(data){
+									acuenta_activo = data.acuenta_activo;
+									$("#tabla_detalle").empty();
+									$("#tabla_detalle").html(data.tabla);
+									$("#totales").val(data.total);
+								}
+							});
+						}
+					});
 				});
 
 			});

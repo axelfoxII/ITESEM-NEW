@@ -134,7 +134,7 @@ if (verificar_usuario()){
 
 										// TABLA RECIBO
 										$sql_det_recibo = mysqli_query($con, "SELECT cod_nro_movimiento, nombre_art, descripcion_nmov, cod_articulo_nmov, cod_estudiante_nmov, 
-											cantidad_nmov, precio_nmov, dscto_nmov, subtotal_nmov, tipo_nmov FROM tbl_detalle_movimiento, tbl_articulo 
+											cantidad_nmov, precio_nmov, factura_nmov, dscto_nmov, subtotal_nmov, tipo_nmov FROM tbl_detalle_movimiento, tbl_articulo 
 											WHERE cod_articulo_nmov = cod_articulo AND tipo_nmov != 2 AND cod_usuario_nmov = $cod_usuario AND cod_estudiante_nmov = $cod_estudiante 
 											ORDER BY cod_nro_movimiento DESC");
 
@@ -156,6 +156,7 @@ if (verificar_usuario()){
 												$nombre_art_nmov = "";
 												while($row = mysqli_fetch_array($sql_det_recibo)){ 
 													$cod_articulo = $row['cod_articulo_nmov'];
+													$factura = "";
 
 													if($row['tipo_nmov'] == 2 || $row['tipo_nmov'] == "2"){
 														// OFERTAS DE MATERIAS
@@ -178,11 +179,13 @@ if (verificar_usuario()){
 														$total_precio_detalle = $total_precio_detalle + $row['precio_nmov'];
 														$total_dscto_detalle = $total_dscto_detalle + $row['dscto_nmov'];
 														$total_monto_detalle = $total_monto_detalle + $row['subtotal_nmov'];
+														if($row['factura_nmov'] != 0 && $row['factura_nmov'] != "0.00")
+															$factura = " - (+".$row['factura_nmov'].")";
 														?>
 														<tr class="active">
 															<td><?php echo $valor_item++; ?></td>
 															<td><?php echo $nombre_art_nmov.$row['descripcion_nmov']; ?></td>
-															<td><b><?php echo $row['precio_nmov']; ?></b></td>
+															<td><b><?php echo $row['precio_nmov'].$factura; ?></b></td>
 															<td><?php echo $row['cantidad_nmov']; ?></td>
 															<td><?php echo $row['dscto_nmov']; ?></td>
 															<td><b><?php echo $row['subtotal_nmov']; ?></b></td>
@@ -230,15 +233,16 @@ if (verificar_usuario()){
 										$cod_articulo_nmov = 0;
 										$descripcion = "";
 										$cantidad_nmov = 0;
-										$precio_nmov = 0; $dscto_nmov = 0; 
+										$precio_nmov = 0; $factura_nmov = 0; $dscto_nmov = 0; 
 										$subtotal_nmov = 0;
-										$sql_det_mov = mysqli_query($con, "SELECT cod_articulo_nmov, descripcion_nmov, cantidad_nmov, precio_nmov, dscto_nmov, subtotal_nmov, tipo_nmov 
+										$sql_det_mov = mysqli_query($con, "SELECT cod_articulo_nmov, descripcion_nmov, cantidad_nmov, precio_nmov, factura_nmov, dscto_nmov, subtotal_nmov, tipo_nmov 
 											FROM tbl_detalle_movimiento WHERE cod_estudiante_nmov = $cod_estudiante AND cod_usuario_nmov = $cod_usuario");
 										while ($row_det = mysqli_fetch_array($sql_det_mov)) {
 											$cod_articulo_nmov = $row_det['cod_articulo_nmov'];
 											$descripcion = $row_det['descripcion_nmov'];
 											$cantidad_nmov = $row_det['cantidad_nmov'];
 											$precio_nmov = $row_det['precio_nmov'];
+											$factura_nmov = $row_det['factura_nmov'];
 											$dscto_nmov = $row_det['dscto_nmov'];
 											$subtotal_nmov = $row_det['subtotal_nmov'];
 
@@ -256,8 +260,8 @@ if (verificar_usuario()){
 												if($subtotal_nmov > 0 && $cod_venta > 0){
 													//INSERT INTO EN LA TABLA tbl_detalle_venta
 													$insert_detalle_venta = mysqli_query($con, "INSERT INTO tbl_detalle_venta (cod_venta_detven, cod_articulo_detven, descripcion_detven, 
-														precio_detven, cantidad_detven, dscto_detven, monto_bs_detven) 
-														VALUES ($cod_venta, $cod_articulo_nmov, '$descripcion', $precio_nmov, $cantidad_nmov, $dscto_nmov, $subtotal_nmov)");
+														precio_detven, factura_detven, cantidad_detven, dscto_detven, monto_bs_detven) 
+														VALUES ($cod_venta, $cod_articulo_nmov, '$descripcion', $precio_nmov, $factura_nmov, $cantidad_nmov, $dscto_nmov, $subtotal_nmov)");
 												} // if $subtotal_nmov > 0 $cod_venta > 0
 
 												// ARTICULO
@@ -272,6 +276,7 @@ if (verificar_usuario()){
 													$precio_art = $row_art['precio_art'];
 												}
 
+												$subtotal_nmov = $subtotal_nmov - $factura_nmov;
 												if($cod_tipoarticulo != 3){
 													$insert_cuenta_debe = mysqli_query($con, "INSERT INTO tbl_cuenta_estudiante (cod_estudiante_cuenta, cod_venta_cuenta, 
 														precio_debe_cuenta, cod_articulo_cuenta, precio_haber_cuenta, cod_tipocuenta_cuenta, descripcion_cuenta)
