@@ -53,25 +53,27 @@
 						<th bgcolor="#D8D8D8"><font color="black">CAR</font></th>
 						<th bgcolor="#D8D8D8"><font color="black">ARTICULO</font></th>
 						<th bgcolor="#D8D8D8"><font color="black">TIPO PAGO</font></th>
+						<th bgcolor="#D8D8D8"><font color="black">FACT. 16%</font></th>
 						<th bgcolor="#D8D8D8"><font color="black">MONTO Bs.</font></th>
 					</tr>
 				</thead>
 				<tbody>
 					<?php
 					$cod_usuario = 0;
-					$monto_total = 0; $monto_usuario = 0;
+					$monto_total = 0;
 					while ($row_uv = mysqli_fetch_array($sql_usuario_venta)) {
 						$cod_usuario = $row_uv['cod_usuario'];
-						$monto_usuario = 0;
+						$monto_usuario = 0; $monto_factura = 0;
 						echo "<tr><td colspan='8'><b>".$row_uv['nombre_per']." - ".$row_uv['apellido_per']."</b></td></tr>";
 
-						$sql_caja = mysqli_query($con, "SELECT cod_venta, nombre_per, apellido_per, carnet_per, sigla_plan, sigla_car, nombre_art, nombre_tipopago, monto_bs_detven 
+						$sql_caja = mysqli_query($con, "SELECT cod_venta, nombre_per, apellido_per, carnet_per, sigla_plan, sigla_car, nombre_art, nombre_tipopago, factura_detven, monto_bs_detven 
 							FROM tbl_venta, tbl_persona, tbl_estudiante, tbl_plan, tbl_carrera, tbl_tipo_pago, tbl_detalle_venta, tbl_articulo 
 							WHERE cod_estudiante_venta = cod_estudiante AND cod_persona_est = cod_persona AND cod_plan_est = cod_plan 
 							AND cod_carrera_est = cod_carrera AND cod_venta = cod_venta_detven AND cod_articulo_detven = cod_articulo 
 							AND cod_tipopago_venta = cod_tipopago AND fecha_venta >= '$fecha_inicio' AND fecha_venta <= '$fecha_fin' 
 							AND estado_venta = 1 AND cod_usuario_venta = $cod_usuario AND cod_sucursal_venta = $sucursal ORDER BY cod_venta");
 						while ($row_v = mysqli_fetch_array($sql_caja)) {
+							$monto_factura = $monto_factura + $row_v['factura_detven'];
 							$monto_usuario = $monto_usuario + $row_v['monto_bs_detven'];
 							$monto_total = $monto_total + $row_v['monto_bs_detven'];
 							?>
@@ -83,10 +85,22 @@
 								<td><?php echo $row_v['sigla_car']; ?></td>
 								<td><b><?php echo $row_v['nombre_art']; ?></b></td>
 								<td><?php echo $row_v['nombre_tipopago']; ?></td>
+								<td align="right"><?php echo number_format((abs ($row_v['factura_detven'])), 2); ?></td>
 								<td align="right"><?php echo number_format((abs ($row_v['monto_bs_detven'])), 2); ?></td>
 							</tr>
 							<?php
 						}
+
+						if($monto_factura > 0){
+							?>
+							<tr class="text-danger">
+								<td colspan="5"></td>
+								<td colspan="3" align="right">TOTAL FACT. 16%:</td>
+								<td align="right"><?php echo number_format((abs ($monto_factura)), 2); ?></td>
+							</tr>
+							<?php
+						}
+						
 						$sql_tipo_total = mysqli_query($con, "SELECT cod_tipopago, nombre_tipopago, SUM(monto_bs_detven) AS monto_bs
 							FROM tbl_venta, tbl_tipo_pago, tbl_detalle_venta  
 							WHERE cod_venta = cod_venta_detven  
@@ -96,14 +110,14 @@
 							?>
 							<tr class="bg-grey-100">
 								<td colspan="5"></td>
-								<td colspan="2" align="right"><b>TOTAL <?php echo $row_tt['nombre_tipopago']; ?>:</b></td>
+								<td colspan="3" align="right"><b>TOTAL <?php echo $row_tt['nombre_tipopago']; ?>:</b></td>
 								<td align="right"><b><?php echo number_format((abs ($row_tt['monto_bs'])), 2); ?></b></td>
 							</tr>
 							<?php
 						}
 						?>
 						<tr class="bg-grey-300">
-							<td colspan="7"></td>
+							<td colspan="8"></td>
 							<td align="right" class="text-danger text-bold"><?php echo number_format((abs ($monto_usuario)), 2); ?></td>
 						</tr>
 						<?php
@@ -111,7 +125,7 @@
 					if($monto_total > 0){
 						?>
 						<tr class="bg-grey-100">
-							<td colspan="7"><b>TOTAL DE INGRESOS:</b></td>
+							<td colspan="8"><b>TOTAL DE INGRESOS:</b></td>
 							<td align="right" class="text-danger"><b><?php echo number_format((abs ($monto_total)), 2); ?></b></td>
 						</tr>
 						<?php
